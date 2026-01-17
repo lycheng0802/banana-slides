@@ -34,7 +34,7 @@ RUN if [ -n "$APT_MIRROR" ]; then \
 COPY --from=uv /uv /usr/local/bin/uv
 RUN chmod +x /usr/local/bin/uv
 
-# 复制项目配置文件
+# 复制项目配置文件（backend 目录下的 pyproject.toml）
 COPY pyproject.toml ./
 COPY uv.lock* ./
 
@@ -52,14 +52,14 @@ RUN if [ -f uv.lock ]; then \
         uv sync; \
     fi
 
-# 复制后端代码
-COPY backend/ ./backend/
+# 复制后端代码（当 Dockerfile 在 backend/ 目录时，复制当前目录内容）
+COPY . ./
 
 # 创建必要的目录
-RUN mkdir -p /app/backend/instance /app/uploads
+RUN mkdir -p /app/instance /app/uploads
 
 ENV PYTHONPATH=/app
-ENV FLASK_APP=backend/app.py
+ENV FLASK_APP=app.py
 
 # 暴露端口
 EXPOSE 5000
@@ -68,5 +68,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD ["sh", "-c", "curl -f http://localhost:${PORT:-5000}/health || exit 1"]
 
 # 启动应用
-CMD ["sh", "-c", "uv run --directory backend alembic upgrade head && uv run --directory backend python app.py"]
+CMD ["sh", "-c", "uv run alembic upgrade head && uv run python app.py"]
 
